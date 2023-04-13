@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"go-datacalc/utils"
 	"net/http"
 )
 
@@ -25,12 +24,12 @@ func NewKairosdb(host string, port string) *Kairosdb {
 	k := Kairosdb{
 		Host:        host,
 		Port:        port,
-		QueryUrl:    fmt.Sprintf("http://%s:%s/api/v1/datapoints/query", utils.KairosdbHost, utils.KairosdbPort),  // 查询URL
-		DeleteUrl:   fmt.Sprintf("http://%s:%s/api/v1/datapoints/delete", utils.KairosdbHost, utils.KairosdbPort), // 删除URL
-		PushUrl:     fmt.Sprintf("http://%s:%s/api/v1/datapoints", utils.KairosdbHost, utils.KairosdbPort),        // 推送URL
-		DelUrl:      fmt.Sprintf("http://%s:%s/api/v1/metric/", utils.KairosdbHost, utils.KairosdbPort),           // 删除指定metric URL
-		Headersjson: map[string]string{"content-type": "application/json"},                                        // JSON请求头
-		Headersgzip: map[string]string{"content-type": "application/gzip"},                                        // GZIP请求头
+		QueryUrl:    fmt.Sprintf("http://%s:%s/api/v1/datapoints/query", host, port),  // 查询URL
+		DeleteUrl:   fmt.Sprintf("http://%s:%s/api/v1/datapoints/delete", host, port), // 删除URL
+		PushUrl:     fmt.Sprintf("http://%s:%s/api/v1/datapoints", host, port),        // 推送URL
+		DelUrl:      fmt.Sprintf("http://%s:%s/api/v1/metric/", host, port),           // 删除指定metric URL
+		Headersjson: map[string]string{"content-type": "application/json"},            // JSON请求头
+		Headersgzip: map[string]string{"content-type": "application/gzip"},            // GZIP请求头
 	}
 	return &k
 }

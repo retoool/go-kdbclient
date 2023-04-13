@@ -3,7 +3,7 @@ package kdb
 import (
 	"encoding/json"
 	"fmt"
-	"go-datacalc/utils/kdb/entity"
+	"github.com/retoool/go-kdbclient/entity"
 	"io/ioutil"
 	"strconv"
 	"time"

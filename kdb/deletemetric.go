@@ -2,7 +2,7 @@ package kdb
 
 import (
 	"fmt"
-	"go-datacalc/utils/kdb/entity"
+	"github.com/retoool/go-kdbclient/entity"
 	"net/http"
 	"time"
 )

@@ -5,9 +5,9 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"go-datacalc/utils"
-	"go-datacalc/utils/kdb/entity"
+	"github.com/retoool/go-kdbclient/entity"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -46,8 +46,6 @@ func PushMsgToKdb(host, port string, msg []string) *http.Response {
 	if err != nil {
 		fmt.Println(err)
 	}
-	utils.GetCacheInstance().CacheData = nil
-	utils.GetMsgInstance().Msg = nil
 	return response
 }
 
@@ -68,12 +66,11 @@ func ParseSensorData(str string) (*SensorData, error) {
 	parts2 := strings.Split(parts[1], ":")
 	value := parts2[0]
 	time := parts2[1]
-
-	timeint, err := utils.StrToInt(time)
+	timeint, err := strconv.Atoi(time)
 	if err != nil {
 		fmt.Println(err)
 	}
-	valuefloat, err := utils.StrToFloat(value)
+	valuefloat, err := strconv.ParseFloat(value, 64)
 	if err != nil {
 		fmt.Println(err)
 	}

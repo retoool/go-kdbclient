@@ -3,11 +3,12 @@ package kdb
 import (
 	"encoding/json"
 	"fmt"
-	"go-datacalc/utils"
-	"go-datacalc/utils/kdb/entity"
 	"io/ioutil"
+	"math"
 	"net/http"
 	"time"
+
+	"github.com/retoool/go-kdbclient/entity"
 )
 
 // KdbClient 是一个Kairosdb客户端
@@ -79,7 +80,7 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 }
 
 // Query 查询数据
-func (client *KdbClient) Query() map[string]map[string]map[int64]float64 {
+func (client *KdbClient) Query() []map[string]map[int64]float64 {
 	response, err := entity.PostRequest(client.Kdbhttp.QueryUrl, client.Bodytext, client.Kdbhttp.Headersjson)
 	if err != nil {
 		fmt.Println(err)
@@ -94,7 +95,7 @@ func (client *KdbClient) Query() map[string]map[string]map[int64]float64 {
 	if err != nil {
 		fmt.Println(err)
 	}
-	qrMap := make(map[string]map[string]map[int64]float64)
+	qrMap := make([]map[string]map[int64]float64, len(resp.QueriesArr))
 	if len(resp.QueriesArr) == 0 {
 		fmt.Print("kairosdb返回数据异常, ")
 		code := resp.GetStatusCode()
@@ -103,6 +104,7 @@ func (client *KdbClient) Query() map[string]map[string]map[int64]float64 {
 		return nil
 	}
 	for i := range resp.QueriesArr {
+		qrMap[i] = make(map[string]map[int64]float64)
 		for j := range resp.QueriesArr[i].ResultsArr {
 			results := resp.QueriesArr[i].ResultsArr[j]
 			points := results.DataPoints
@@ -110,7 +112,6 @@ func (client *KdbClient) Query() map[string]map[string]map[int64]float64 {
 				fmt.Println(results.Name + ",未查询到数据")
 				continue
 			}
-			pointName := results.Name
 			tag := results.Tags["project"][0]
 			if len(points) == 0 {
 				fmt.Println(tag + ":" + results.Name + ",未查询到数据")
@@ -120,16 +121,15 @@ func (client *KdbClient) Query() map[string]map[string]map[int64]float64 {
 			if err != nil {
 				fmt.Println(err)
 			}
-			value = utils.Round(value, 6)
+			scale := math.Pow(10, float64(6))
+			value = math.Round(value*scale) / scale
+
 			timestamp := points[0].Timestamp()
 
-			if qrMap[pointName] == nil { // 优化：避免map初始化
-				qrMap[pointName] = make(map[string]map[int64]float64)
+			if qrMap[i][tag] == nil {
+				qrMap[i][tag] = make(map[int64]float64)
 			}
-			if qrMap[pointName][tag] == nil {
-				qrMap[pointName][tag] = make(map[int64]float64)
-			}
-			qrMap[pointName][tag][timestamp] = value
+			qrMap[i][tag][timestamp] = value
 		}
 	}
 	return qrMap

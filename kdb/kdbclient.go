@@ -168,19 +168,22 @@ func (client *KdbClient) Query() []map[string]map[int64]float64 {
 				fmt.Println(tag + ":" + results.Name + ",未查询到数据")
 				continue
 			}
-			value, err := points[0].Float64Value()
-			if err != nil {
-				fmt.Println(err)
-			}
-			scale := math.Pow(10, float64(6))
-			value = math.Round(value*scale) / scale
+			for y := range points {
+				value, err := points[y].Float64Value()
+				if err != nil {
+					fmt.Println(err)
+				}
+				scale := math.Pow(10, float64(6))
+				value = math.Round(value*scale) / scale
 
-			timestamp := points[0].Timestamp()
+				timestamp := points[y].Timestamp()
 
-			if qrMap[i][tag] == nil {
-				qrMap[i][tag] = make(map[int64]float64)
+				if qrMap[i][tag] == nil {
+					qrMap[i][tag] = make(map[int64]float64)
+				}
+				qrMap[i][tag][timestamp] = value
 			}
-			qrMap[i][tag][timestamp] = value
+
 		}
 	}
 	return qrMap

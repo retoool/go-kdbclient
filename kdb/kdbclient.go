@@ -79,6 +79,56 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 	client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
 }
 
+func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr string, aligntime string, minvalue string,
+	maxvalue string, samplingValue string, samplingUnit string) {
+	for _, pointname := range pointnames {
+		if samplingValue == "" && samplingUnit == "" {
+			samplingValue = "10"
+			samplingUnit = "years"
+		}
+		metric := make(map[string]interface{})
+		metric["group_by"] = []map[string]interface{}{
+			{"name": "tag", "tags": []string{"project"}},
+		}
+		metric["name"] = pointname
+		metric["tags"] = map[string]interface{}{
+			"project": tags,
+		}
+		aggregators := make([]interface{}, 0)
+		if minvalue != "" {
+			minAggregator := map[string]interface{}{
+				"name":      "filter",
+				"filter_op": "lt",
+				"threshold": minvalue,
+			}
+			aggregators = append(aggregators, minAggregator)
+		}
+		if maxvalue != "" {
+			maxAggregator := map[string]interface{}{
+				"name":      "filter",
+				"filter_op": "gt",
+				"threshold": maxvalue,
+			}
+			aggregators = append(aggregators, maxAggregator)
+		}
+		if aggr != "" {
+			newAggregator := map[string]interface{}{
+				"name":     aggr,
+				"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+			}
+			if aligntime == "start" {
+				newAggregator["align_start_time"] = true
+			} else if aligntime == "end" {
+				newAggregator["align_end_time"] = true
+			}
+			aggregators = append(aggregators, newAggregator)
+		}
+		metric["aggregators"] = aggregators
+		client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
+	}
+
+}
+
 // Query 查询数据
 func (client *KdbClient) Query() []map[string]map[int64]float64 {
 	response, err := entity.PostRequest(client.Kdbhttp.QueryUrl, client.Bodytext, client.Kdbhttp.Headersjson)

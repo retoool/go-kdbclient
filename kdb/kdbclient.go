@@ -79,6 +79,7 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 	client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
 }
 
+// AddPoints 添加多个数据点
 func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr string, aligntime string, minvalue string,
 	maxvalue string, samplingValue string, samplingUnit string) {
 	for _, pointname := range pointnames {

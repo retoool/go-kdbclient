@@ -33,7 +33,7 @@ func NewClient(host string, port string, starttime time.Time, endtime time.Time)
 
 // AddPoint 添加一个数据点
 func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, aligntime string, minvalue string,
-	maxvalue string, samplingValue string, samplingUnit string) {
+	maxvalue string, samplingValue string, samplingUnit string) *KdbClient {
 	if samplingValue == "" && samplingUnit == "" {
 		samplingValue = "10"
 		samplingUnit = "years"
@@ -72,11 +72,14 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 			newAggregator["align_start_time"] = true
 		} else if aligntime == "end" {
 			newAggregator["align_end_time"] = true
+		} else if aligntime == "sample" {
+			newAggregator["align_sampling"] = true
 		}
 		aggregators = append(aggregators, newAggregator)
 	}
 	metric["aggregators"] = aggregators
 	client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
+	return client
 }
 
 // AddPoints 添加多个数据点

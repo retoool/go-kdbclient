@@ -2,10 +2,13 @@ package kdb
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"math"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/retoool/go-kdbclient/entity"
@@ -134,47 +137,56 @@ func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr stri
 }
 
 // Query 查询数据
-func (client *KdbClient) Query() []map[string]map[int64]float64 {
+func (client *KdbClient) Query() (Response_trans, error) {
+	var response_trans Response_trans
 	response, err := entity.PostRequest(client.Kdbhttp.QueryUrl, client.Bodytext, client.Kdbhttp.Headersjson)
+	response_trans.SetCode(response.StatusCode)
 	if err != nil {
-		fmt.Println(err)
+		return response_trans, err
 	}
-	defer response.Body.Close() // 优化：关闭response.Body
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			return
+		}
+	}(response.Body) // 优化：关闭response.Body
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		fmt.Println(err)
+		return response_trans, err
 	}
 	resp := entity.NewQueryResponse(response.StatusCode)
 	err = json.Unmarshal(contents, resp)
 	if err != nil {
-		fmt.Println(err)
+		return response_trans, err
 	}
 	qrMap := make([]map[string]map[int64]float64, len(resp.QueriesArr))
+	response_trans.SetResult(qrMap)
 	if len(resp.QueriesArr) == 0 {
 		fmt.Print("kairosdb返回数据异常, ")
 		code := resp.GetStatusCode()
-		errors := resp.GetErrors()
-		fmt.Println(code, errors)
-		return nil
+		codeStr := strconv.Itoa(code)
+		errs := resp.GetErrors()
+		return response_trans, errors.New("kairosdb返回数据异常, " + codeStr + errs[0])
 	}
+	var messages []string
 	for i := range resp.QueriesArr {
 		qrMap[i] = make(map[string]map[int64]float64)
 		for j := range resp.QueriesArr[i].ResultsArr {
 			results := resp.QueriesArr[i].ResultsArr[j]
 			points := results.DataPoints
 			if len(results.Tags["project"]) <= 0 {
-				fmt.Println(results.Name + ",未查询到数据")
+				messages = append(messages, results.Name+",未查询到数据")
 				continue
 			}
 			tag := results.Tags["project"][0]
 			if len(points) == 0 {
-				fmt.Println(tag + ":" + results.Name + ",未查询到数据")
+				messages = append(messages, tag+":"+results.Name+",未查询到数据")
 				continue
 			}
 			for y := range points {
 				value, err := points[y].Float64Value()
 				if err != nil {
-					fmt.Println(err)
+					return response_trans, err
 				}
 				scale := math.Pow(10, float64(6))
 				value = math.Round(value*scale) / scale
@@ -186,17 +198,14 @@ func (client *KdbClient) Query() []map[string]map[int64]float64 {
 				}
 				qrMap[i][tag][timestamp] = value
 			}
-
 		}
 	}
-	return qrMap
+	response_trans.SetMessages(messages)
+	return response_trans, nil
 }
 
 // Delete 删除数据
-func (client *KdbClient) Delete() *http.Response {
+func (client *KdbClient) Delete() (*http.Response, error) {
 	response, err := entity.PostRequest(client.Kdbhttp.DeleteUrl, client.Bodytext, client.Kdbhttp.Headersjson)
-	if err != nil {
-		fmt.Println(err)
-	}
-	return response
+	return response, err
 }

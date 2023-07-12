@@ -67,18 +67,26 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 		aggregators = append(aggregators, maxAggregator)
 	}
 	if aggr != "" {
-		newAggregator := map[string]interface{}{
-			"name":     aggr,
-			"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+		if aggr == "diff" {
+			newAggregator := map[string]interface{}{
+				"name": aggr,
+			}
+			aggregators = append(aggregators, newAggregator)
+		} else {
+			newAggregator := map[string]interface{}{
+				"name":     aggr,
+				"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+			}
+
+			if aligntime == "start" {
+				newAggregator["align_start_time"] = true
+			} else if aligntime == "end" {
+				newAggregator["align_end_time"] = true
+			} else if aligntime == "sample" {
+				newAggregator["align_sampling"] = true
+			}
+			aggregators = append(aggregators, newAggregator)
 		}
-		if aligntime == "start" {
-			newAggregator["align_start_time"] = true
-		} else if aligntime == "end" {
-			newAggregator["align_end_time"] = true
-		} else if aligntime == "sample" {
-			newAggregator["align_sampling"] = true
-		}
-		aggregators = append(aggregators, newAggregator)
 	}
 	metric["aggregators"] = aggregators
 	client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
@@ -119,16 +127,26 @@ func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr stri
 			aggregators = append(aggregators, maxAggregator)
 		}
 		if aggr != "" {
-			newAggregator := map[string]interface{}{
-				"name":     aggr,
-				"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+			if aggr == "diff" {
+				newAggregator := map[string]interface{}{
+					"name": aggr,
+				}
+				aggregators = append(aggregators, newAggregator)
+			} else {
+				newAggregator := map[string]interface{}{
+					"name":     aggr,
+					"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+				}
+
+				if aligntime == "start" {
+					newAggregator["align_start_time"] = true
+				} else if aligntime == "end" {
+					newAggregator["align_end_time"] = true
+				} else if aligntime == "sample" {
+					newAggregator["align_sampling"] = true
+				}
+				aggregators = append(aggregators, newAggregator)
 			}
-			if aligntime == "start" {
-				newAggregator["align_start_time"] = true
-			} else if aligntime == "end" {
-				newAggregator["align_end_time"] = true
-			}
-			aggregators = append(aggregators, newAggregator)
 		}
 		metric["aggregators"] = aggregators
 		client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)

@@ -3,7 +3,6 @@ package kdb
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"math"
@@ -158,16 +157,16 @@ func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr stri
 func (client *KdbClient) Query() (Response_trans, error) {
 	var response_trans Response_trans
 	response, err := entity.PostRequest(client.Kdbhttp.QueryUrl, client.Bodytext, client.Kdbhttp.Headersjson)
-	response_trans.SetCode(response.StatusCode)
 	if err != nil {
-		return response_trans, err
+		return Response_trans{}, err
 	}
+	response_trans.SetCode(response.StatusCode)
 	defer func(Body io.ReadCloser) {
 		err := Body.Close()
 		if err != nil {
 			return
 		}
-	}(response.Body) // 优化：关闭response.Body
+	}(response.Body)
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
 		return response_trans, err
@@ -180,7 +179,6 @@ func (client *KdbClient) Query() (Response_trans, error) {
 	qrMap := make([]map[string]map[int64]float64, len(resp.QueriesArr))
 	response_trans.SetResult(qrMap)
 	if len(resp.QueriesArr) == 0 {
-		fmt.Print("kairosdb返回数据异常, ")
 		code := resp.GetStatusCode()
 		codeStr := strconv.Itoa(code)
 		errs := resp.GetErrors()

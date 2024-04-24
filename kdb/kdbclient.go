@@ -35,7 +35,7 @@ func NewClient(host string, port string, starttime time.Time, endtime time.Time)
 
 // AddPoint 添加一个数据点
 func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, aligntime string, minvalue string,
-	maxvalue string, samplingValue string, samplingUnit string) *KdbClient {
+	maxvalue string, samplingValue string, samplingUnit string) {
 	if samplingValue == "" && samplingUnit == "" {
 		samplingValue = "10"
 		samplingUnit = "years"
@@ -154,11 +154,11 @@ func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr stri
 }
 
 // Query 查询数据
-func (client *KdbClient) Query() (Response_trans, error) {
-	var response_trans Response_trans
+func (client *KdbClient) Query() (entity.Response_trans, error) {
+	var response_trans entity.Response_trans
 	response, err := entity.PostRequest(client.Kdbhttp.QueryUrl, client.Bodytext, client.Kdbhttp.Headersjson)
 	if err != nil {
-		return Response_trans{}, err
+		return entity.Response_trans{}, err
 	}
 	response_trans.SetCode(response.StatusCode)
 	defer func(Body io.ReadCloser) {

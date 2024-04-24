@@ -1,4 +1,4 @@
-package kdb
+package entity
 
 type Response_trans struct {
 	result   []map[string]map[int64]float64

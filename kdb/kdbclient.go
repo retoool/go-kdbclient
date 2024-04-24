@@ -89,7 +89,7 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 	}
 	metric["aggregators"] = aggregators
 	client.Bodytext["metrics"] = append(client.Bodytext["metrics"].([]map[string]interface{}), metric)
-	return client
+	return
 }
 
 // AddPoints 添加多个数据点

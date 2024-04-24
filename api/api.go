@@ -7,6 +7,7 @@ import (
 )
 
 type KdbClient interface {
+	AddCustomFunc(name, funcJsStr string)
 	AddPoint(pointname string, tags []string, aggr string, aligntime string, minvalue string,
 		maxvalue string, samplingValue string, samplingUnit string)
 	AddPoints(pointnames []string, tags []string, aggr string, aligntime string, minvalue string,

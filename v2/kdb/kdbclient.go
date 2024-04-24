@@ -15,22 +15,28 @@ import (
 
 // KdbClient 是一个Kairosdb客户端
 type KdbClient struct {
-	Bodytext map[string]interface{} // 请求体
-	Kdbhttp  *entity.Kairosdb       // Kairosdb实例
+	Bodytext   map[string]interface{} // 请求体
+	Kdbhttp    *entity.Kairosdb       // Kairosdb实例
+	CustomFunc map[string]string
 }
 
 // NewClient 创建一个新的KdbClient
 func NewClient(host string, port string, starttime time.Time, endtime time.Time) *KdbClient {
-	var client KdbClient
-	beginunix := starttime.UnixMilli()
+	beginUnix := starttime.UnixMilli()
 	endUnix := endtime.UnixMilli()
-	client.Bodytext = map[string]interface{}{
-		"start_absolute": beginunix,
-		"end_absolute":   endUnix,
-		"metrics":        []map[string]interface{}{},
+	return &KdbClient{
+		Bodytext: map[string]interface{}{
+			"start_absolute": beginUnix,
+			"end_absolute":   endUnix,
+			"metrics":        []map[string]interface{}{},
+		},
+		Kdbhttp:    entity.NewKairosdb(host, port),
+		CustomFunc: make(map[string]string),
 	}
-	client.Kdbhttp = entity.NewKairosdb(host, port)
-	return &client
+}
+
+func (client *KdbClient) AddCustomFunc(name, funcJsStr string) {
+	client.CustomFunc[name] = funcJsStr
 }
 
 // AddPoint 添加一个数据点
@@ -77,6 +83,20 @@ func (client *KdbClient) AddPoint(pointname string, tags []string, aggr string, 
 		if aggr == "diff" {
 			newAggregator := map[string]interface{}{
 				"name": aggr,
+			}
+			aggregators = append(aggregators, newAggregator)
+		} else if customFunc, ok := client.CustomFunc[aggr]; ok {
+			newAggregator := map[string]interface{}{
+				"name":     aggr,
+				"script":   customFunc,
+				"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+			}
+			if aligntime == "start" {
+				newAggregator["align_start_time"] = true
+			} else if aligntime == "end" {
+				newAggregator["align_end_time"] = true
+			} else if aligntime == "sample" {
+				newAggregator["align_sampling"] = true
 			}
 			aggregators = append(aggregators, newAggregator)
 		} else {
@@ -145,6 +165,20 @@ func (client *KdbClient) AddPoints(pointnames []string, tags []string, aggr stri
 			if aggr == "diff" {
 				newAggregator := map[string]interface{}{
 					"name": aggr,
+				}
+				aggregators = append(aggregators, newAggregator)
+			} else if customFunc, ok := client.CustomFunc[aggr]; ok {
+				newAggregator := map[string]interface{}{
+					"name":     aggr,
+					"script":   customFunc,
+					"sampling": map[string]string{"value": samplingValue, "unit": samplingUnit},
+				}
+				if aligntime == "start" {
+					newAggregator["align_start_time"] = true
+				} else if aligntime == "end" {
+					newAggregator["align_end_time"] = true
+				} else if aligntime == "sample" {
+					newAggregator["align_sampling"] = true
 				}
 				aggregators = append(aggregators, newAggregator)
 			} else {
